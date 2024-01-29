@@ -1,21 +1,54 @@
-clc; clear; close all;
-default_paper;
+clc; 
+clear all ; 
+close all ;
 
 %% Dynamics
-a = sym('a', 'real');
-c = sym('c', 'real');
+
+% a = sym('a', 'real');
+% c = sym('c', 'real');
+% S = sym('S', 'real');
+% I = sym('I', 'real');
+% R = sym('R', 'real');
+% var = {S; I; a; c};
+% n = length(var);
+% 
+% dyn = { -a*S*I      ; ...
+%         a*S*I - c*I ; ...
+%         0           ; ...
+%         0           };
+% 
+% C = [1, 1, 0, 0];
+
+%% Dynamics
+
+alpha = sym('alpha', 'real');
+gamma = sym('gamma', 'real');
+delta = sym('delta', 'real');
+sigma = sym('sigma', 'real');
+tau = sym('tau', 'real');
+lambda = sym('lambda', 'real');
 S = sym('S', 'real');
 I = sym('I', 'real');
-R = sym('R', 'real');
-var = {S; I; a; c};
+D = sym('D', 'real');
+T = sym('T', 'real');
+H = sym('H', 'real');
+E = sym('E', 'real');
+
+var = {S; I; D; T; H; alpha; gamma; delta};
 n = length(var);
 
-dyn = { -a*S*I      ; ...
-        a*S*I - c*I ; ...
+dyn = { -S * (alpha * I); ...
+         S * (alpha * I) - gamma * I; ...
+         I * gamma - D * (lambda + delta); ...
+         D * delta - (sigma + tau) * T; ...
+        (I + D) * lambda + T * sigma; ...
+        % E is removed 
         0           ; ...
-        0           };
+        0           ; ...
+        0 };
 
-C = [1, 1, 0, 0];
+C = [eye(5), zeros(5,3)];
+n_meas = size(C,1);
 
 %% Observability
 J = sym('x', n);
@@ -27,9 +60,9 @@ for i = 1:n
     end
 end
 
-O(1,:) = C;
-for i = 2:n
-    O(i,:) = O(i-1,:)*J;
+O(1:n_meas,:) = C;
+for i = 1:(n-1)
+    O((i*n_meas+1):(i+1)*n_meas,:) = O(((i-1)*n_meas+1):i*n_meas,:)*J;
 end
 rank(O)
 
@@ -62,7 +95,7 @@ for i = 1:rank(O)
 end
 
 %% "Kalman" decomposition
-T = [o,uo];
-simplify(C*T)
-simplify(T*[S;I;a;c])
-simplify(T\J*T)
+% T = [o,uo];
+% simplify(C*T)
+% simplify(T*[var{:}].')
+% simplify(T\J*T)

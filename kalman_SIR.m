@@ -1,5 +1,4 @@
 clc; clear; close all;
-default_paper;
 
 %% Load data
 dataset = readtable('Italy_complete_dataset.xlsx');
