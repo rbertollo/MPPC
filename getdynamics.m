@@ -1,4 +1,4 @@
-function [f_syms, f_hand] = getdynamics(eqns,vars,coefs)
+function [f_syms, f_hand, f_ODE] = getdynamics(eqns,vars,coefs)
     
     nzeros = length(vars)-length(eqns);
     f_syms = [eqns; zeros(nzeros,1)];
@@ -27,6 +27,7 @@ function [f_syms, f_hand] = getdynamics(eqns,vars,coefs)
 
     eqnStr = strjoin(replacedEqnsStr, '; ');
     funcStr = ['@(x,par)[', eqnStr, ']'];
+    funcStrODE = ['@(t,x)[', eqnStr, ']'];
     f_hand = str2func(funcStr);
-
+    f_ODE = str2func(funcStrODE);
 end
