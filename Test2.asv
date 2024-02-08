@@ -207,13 +207,13 @@ opti.subject_to( 1e-4 <= x_lift(5,:) <= 0.5 ); % tau constr.
 % options on solver
 % opts.print_time = 0;
 % opts.ipopt.print_level = 0;
-opti.solver('ipopt');
+opti.solver('ipopt', opts);
 
 for i = 2:length(t)
 % for i = 2:3
     predict(ekf);
     correct(ekf,Zmeas(:,i));
-    x_old(i,:) = ekf.State';
+    x(i,:) = ekf.State';
     x_corr = ekf.State; 
 
     obj = []; % initialization of the object for every iteration 
