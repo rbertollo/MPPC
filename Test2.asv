@@ -10,13 +10,14 @@ opti = casadi.Opti();
 % Define the set of differential equations and relative syms variables
 
 syms S I D T H E % Variables
-syms alpha gamma delta lambda sigma tau % Coefs
+syms alpha gamma delta lambda lambda2 sigma tau % Coefs
 
-eqns = [    -S * (alpha * I) + lambda * I;...
+eqns = [    -S * (alpha * I);...
              S * (alpha * I) - (gamma+lambda) * I;...
              I * gamma - D * (lambda + delta);...
              delta * D - (tau + sigma)*T;...
-             lambda * (D) + T * sigma];
+             lambda * (D) + T * sigma + lambda * I];
+
 
 vars = [S I D T H alpha gamma delta sigma tau];
 coefs = [lambda];
@@ -26,7 +27,7 @@ coefs = [lambda];
 [f1,f2,f_ODE] = getdynamics(eqns,vars,coefs);
 
 % Write "C" measurements matrix
-C = [eye(5), zeros(5,5)];
+C = [ diag([1 1 1 1 1]), zeros(5,5)];
 
 J = jacobian(f1,vars);
 
@@ -92,10 +93,9 @@ delta = opti.variable(1,N);
 sigma = opti.variable(1,N);
 tau = opti.variable(1,N);
 lambda = opti.variable(1,N);
-err = (2 * rand - 1)*alpha_0;
 
 x = [S; I; D; T; H; alpha; gamma; delta; sigma; tau];
-par = [lambda err];
+par = [lambda];
 
 % Constraints related to the coefficients
 
@@ -207,13 +207,13 @@ opti.subject_to( 1e-4 <= x_lift(5,:) <= 0.5 ); % tau constr.
 % options on solver
 % opts.print_time = 0;
 % opts.ipopt.print_level = 0;
-opti.solver('ipopt', opts);
+opti.solver('ipopt');
 
 for i = 2:length(t)
 % for i = 2:3
     predict(ekf);
     correct(ekf,Zmeas(:,i));
-    x(i,:) = ekf.State';
+    x_old(i,:) = ekf.State';
     x_corr = ekf.State; 
 
     obj = []; % initialization of the object for every iteration 

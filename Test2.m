@@ -10,15 +10,17 @@ opti = casadi.Opti();
 % Define the set of differential equations and relative syms variables
 
 syms S I D T H E % Variables
-syms alpha gamma delta lambda sigma tau % Coefs
+syms alpha gamma delta lambda lambda2 sigma tau % Coefs
 
-eqns = [    -S * (alpha * I) + lambda * I;...
-             S * (alpha * I) - (gamma+lambda) * I;...
+eqns = [    -S * (alpha * I);...
+             S * (alpha * I) - (gamma + lambda) * I;...
              I * gamma - D * (lambda + delta);...
              delta * D - (tau + sigma)*T;...
-             lambda * (D) + T * sigma];
+             lambda * D + T * sigma + lambda * I;...
+             tau*T];
 
-vars = [S I D T H alpha gamma delta sigma tau];
+
+vars = [S I D T H E alpha gamma delta sigma tau];
 coefs = [lambda];
 
 % Passing the vector of equations 
@@ -26,7 +28,7 @@ coefs = [lambda];
 [f1,f2,f_ODE] = getdynamics(eqns,vars,coefs);
 
 % Write "C" measurements matrix
-C = [eye(5), zeros(5,5)];
+C = [ diag([1 1 1 1 1]), zeros(5,5)];
 
 J = jacobian(f1,vars);
 
@@ -66,7 +68,7 @@ lambda_0 = 0.0596;
 randomValue_0 = 0.01;
 
 x0 = [S_data(1); I_data(1); D_data(1); T_data(1); H_data(1); alpha_0; gamma_0; delta_0; sigma_0; tau_0;];
-par0 = [lambda_0; randomValue_0];
+par0 = [lambda_0];
 t = 1:399;
 data = [S_data', I_data', D_data', T_data', H_data'];
 
@@ -92,10 +94,9 @@ delta = opti.variable(1,N);
 sigma = opti.variable(1,N);
 tau = opti.variable(1,N);
 lambda = opti.variable(1,N);
-err = (2 * rand - 1)*alpha_0;
 
 x = [S; I; D; T; H; alpha; gamma; delta; sigma; tau];
-par = [lambda err];
+par = [lambda];
 
 % Constraints related to the coefficients
 

@@ -6,39 +6,36 @@ close all
 addpath('/Users/marcodelloro/Downloads/casadi-3.6.3-osx64-matlab2018b')
 import casadi.*;
 
-load('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Data_Collection/Italian Dataset/SIDTTHE_data_DEF.mat');
+load('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Data_Collection/Australian Dataset/SIDTTHE_AUS.mat');
+load('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Data_Collection/Australian Dataset/DataStructAUS.mat');
 set(0,'DefaultFigureWindowStyle','docked');
-
-dataset = readtable('Italy_complete_dataset.xlsx');
-dataset = dataset(190:588,:);
-dataset.data = datetime(dataset.data, 'InputFormat', 'dd-MMM-yyyy HH:mm:ss');
 
 %%  Data Loading and Initialization
 
-Npop = 59240329; % Total Population of Italy
+Npop = 25766605; % Total Population of Australia as of 31 December 2021
 N = 399;       % MPC horizon length
 N_mhe = 21;    % Estimation horizon (3 weeks)
-date = SIDTTHE_data{1,1}.date;
+date = DataStructAUS.Raw.Date;
 
-I_data = SIDTTHE_data{1,1}.data / Npop;     
-D_data = SIDTTHE_data{2,1}.data / Npop;     
-T_data = (SIDTTHE_data{3,1}.data + SIDTTHE_data{4,1}.data) / Npop;
-H_data = SIDTTHE_data{7,1}.data / Npop;
-H_dataAug = SIDTTHE_data{6,1}.data / Npop;
-E_data = SIDTTHE_data{5,1}.data  / Npop;
-S_data = ones(length(I_data),1)' - (I_data + D_data + T_data + H_dataAug + E_data );
+I_data = SIDTTHE_AUS{1,1} ./ Npop;     
+D_data = SIDTTHE_AUS{2,1} ./ Npop;     
+T_data = (SIDTTHE_AUS{3,1} + SIDTTHE_AUS{4,1}) ./ Npop;
+H_data = SIDTTHE_AUS{7,1} ./ Npop;
+H_dataAug = SIDTTHE_AUS{6,1}' ./ Npop;
+E_data = SIDTTHE_AUS{5,1}  ./ Npop;
+S_data = ones(length(I_data),1) - (I_data + D_data + T_data + H_dataAug + E_data );
 
-rawT = dataset.ricoverati + dataset.terapia_intensiva/Npop;
-rawD = dataset.isolamento_domiciliare/Npop;
-rawH = dataset.guariti/Npop;
-rawE = dataset.deceduti/Npop;
+rawT = (DataStructAUS.Raw.Hospitalised +  DataStructAUS.Raw.ICUs) / Npop;
+rawD = DataStructAUS.Raw.ActiveCases / Npop;
+rawH = DataStructAUS.Raw.newHealed / Npop;
+rawE = DataStructAUS.Raw.Deaths / Npop;
 
 rawT = rawT./max(rawT);
 rawD = rawD./max(rawD);
 rawH = rawH./max(rawH);
 rawE = rawE./max(rawE);
 
-y_meas = [S_data; I_data; D_data; T_data; H_dataAug; E_data]; % creation of the measurement vector
+y_meas = [S_data'; I_data'; D_data'; T_data'; H_dataAug'; E_data']; % creation of the measurement vector
 n_meas = size(y_meas,1);
 
 std_vec = [5*std(I_data-rawD'), 5*std(I_data-rawD'),...
@@ -84,7 +81,7 @@ eqns = [    -x(1) * (x(7) * x(2));...
              x(2) * x(8) - x(3) * (lambda + x(9));...
              x(9) * x(3) - ( x(11) + x(10) )*x(4);...
              lambda * x(3) + x(4) * x(10) + lambda * x(2);...
-             x(11) * x(4);...
+             x(10) * x(4);...
              0;...
              0;...
              0;...
@@ -112,8 +109,6 @@ end
 
 matrix_par = [];
 matrix_sts = [];
-matrix_szero = [];
-
 stdevs = std(y_meas,1,2);
 
 opti.subject_to(X(:)>0);
@@ -127,7 +122,6 @@ opti.subject_to(-stdevs(5)*c < v(5,:) < stdevs(5)*c);
 opti.subject_to(-stdevs(6)*c < v(6,:) < stdevs(6)*c);
 
 for ii=1:N_mhe
-    % opti.subject_to( 1 - sum(X(1:6,ii)) >= 0  );
     opti.subject_to( sum(X(1:6,ii)) == 1 )
 end
 
@@ -143,7 +137,7 @@ opts.ipopt.print_level = 0;
 opti.solver('ipopt', opts);
 
 xtilde = y_meas(1:6,1);    
-ptilde = [0.25; 0.12; 0.01; 0.02; 0.1 ];
+ptilde = [0.3; 0.1; 0.08; 0.015; 0.35 ];
 dyn = [xtilde' ptilde' ];
 Pi_min = diag([std(S_data), std(I_data), std(D_data), std(T_data), std(H_data), std(E_data) 0.01, 0.01, 0.01, 0.01, 0.01]);
 
@@ -155,20 +149,13 @@ Pi_min = diag([std(S_data), std(I_data), std(D_data), std(T_data), std(H_data), 
 %                                         estimate, at curent state
 % cost 4 = xdot - f(x) == v(t) --> minimize process noise at the current time instant
 
-% Names of the states
-column_names_sts = {'S', 'I', 'D', 'T', 'H', 'E'};
-
-%Initialization of ful state matri
-iterationIndex = 1;
-tables3D = cell(1, N - 2*N_mhe + 1);
-
 for k = N_mhe:1:N-N_mhe
     % matrices for EKF cov. update
     [A,C,G] = getMatricesEKF(dyn);
     Q = diag([1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.1, 0.1, 0.1, 0.1, 0.1]);
     R = [0.0387	0.0387 0.00570 0.0080 0.00076 0.006];
     Z1 = diag([2 1 5 5 2 2]);
-    Z2 = diag([10 25 35 15 10]);
+    Z2 = diag([10 8 10 12 5]);
     Pi = G*Q*G' + A*Pi_min*A' - A*Pi_min*C'*inv(R + C*Pi_min*C')*C*Pi_min*A';
 
     cost1 = [X(1:6,1) - xtilde; X(7:11,1) - ptilde]'*inv(Pi)*[X(1:6,1) - xtilde; X(7:11,1) - ptilde];
@@ -184,57 +171,47 @@ for k = N_mhe:1:N-N_mhe
     % Save of the optimization values
     params_dyn = opti.value(X(7:end,end))';
     states_dyn = opti.value(X(1:6,end))';
-    states_zero = opti.value(X(1:6,1))';
-    
-    currentState = opti.value(X(1:6,:))';
-    currentTable = array2table(currentState, 'VariableNames', column_names_sts);
-    stateTables{iterationIndex} = currentTable; % Saving all the tables in the cell struct
-    iterationIndex = iterationIndex + 1;
 
     % Append the current row to the main table
     matrix_par = [matrix_par; params_dyn];
     matrix_sts = [matrix_sts; states_dyn];
-    matrix_szero = [matrix_szero; states_zero];
-   
-
     ptilde = opti.value(X(7:11,1));
     xtilde = opti.value(X(1:6,2));
-end
 
+end
 %% Plot of the results
 
 % Results saving in a results struct
 column_names_par = {'alpha', 'gamma', 'delta','sigma', 'tau'};
+column_names_sts = {'S', 'I', 'D', 'T', 'H', 'E'};
 
 table_par = array2table(matrix_par, 'VariableNames', column_names_par);
 table_sts = array2table(matrix_sts, 'VariableNames', column_names_sts);
-table_sts_zero = array2table(matrix_szero, 'VariableNames', column_names_sts);
 
 results.par = table_par;
 results.sts = table_sts;
-results.stszero = table_sts_zero;
-results.FullStates = stateTables;
-
-% save the results in a CSV to import in into Python
-path = '/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython';
-filePathPar = fullfile(path, 'table_par.csv');
-writetable(results.par, filePathPar);
-
-save('results.mat', 'results');
 
 %% Additional Intersting plots,
 
-policy_idx = [1 40 69 116 141 190 242 294 399];   % Values taken from italian policies applied for the pandemic
+policy_idx = [1 15 25 42 91 165 294 399];   % Values taken from italian policies applied for the pandemic
 
 for ii=1:length(policy_idx)
     policy_dates(ii) = [date(policy_idx(ii))];
 end
 
-customColors2 = {   [1, 0.6, 0.2],
+customColors2 = {   [1, 0.2, 0.05],
                     [1, 0.3, 0.05],
                     [1, 0.2, 0.05],
+                    [0.8, 0.2, 0.1],           
                     [0.8, 0.2, 0.1],
-                    [1, 0.2, 0.05],            
+                    [1, 0.3, 0.05],
+                    [1, 0.6, 0.2]
+                };
+
+customColors2 = {   [0.8, 0.2, 0.1], 
+                    [1, 0.3, 0.05],
+                    [1, 0.2, 0.05],
+                    [0.8, 0.2, 0.1],           
                     [0.8, 0.2, 0.1],
                     [1, 0.3, 0.05],
                     [1, 0.6, 0.2]
