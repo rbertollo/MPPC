@@ -1,8 +1,8 @@
-function e = error_fcn(dyn, data_times, data_values, x0, C, par)
-    
+function e = error_fcn(dyn, data_times, data_values, x0, C, par, penalty, varargin)
+
     % Simulate the system trajectories
     opts = odeset('RelTol',1e-3,'AbsTol',1e-6);
-    [t,x] = ode45(@(t,x) dyn(x,par), data_times(2:end), x0, opts);
+    [t,x] = ode45(@(t,x) dyn(x,input_data(t),par), data_times(2:end)-1, x0, opts);
     
     % Compute the measured output
     y = zeros(length(t),size(C,1));
@@ -19,4 +19,11 @@ function e = error_fcn(dyn, data_times, data_values, x0, C, par)
     % Evaluate the difference between simulated points and data points
     dy = (y - data_values(2:end,:))./sigma;
     e = dy(:);
+
+    % If requested, augment with the penalty term
+    if penalty
+        R = varargin{1};
+        par_star = varargin{2};
+        e = [e; sqrt(sum((par-par_star).^2))/R - 1];
+    end
 end
