@@ -92,136 +92,135 @@ end
 
 %% Sim with x0 as Real Data
 
-for i = 1:size(results.par,1)
-
-    X0 = [  S_data(i);... S starting cond.
-            I_data(i);... I starting cond.
-            D_data(i);... D starting cond.
-            T_data(i);... T starting cond.
-            H_data(i);... H starting cond.
-            E_data(i)           ];
-
-     alpha = results.par.alpha(i);
-     gamma = results.par.gamma(i);
-     delta = results.par.delta(i);
-     sigma = results.par.sigma(i);
-     tau   = results.par.tau(i);
-
-     eqns2 = [ -x(1) * (alpha * x(2));...
-                x(1) * (alpha * x(2)) - (gamma+lambda) * x(2);...
-                x(2) * gamma - x(3) * (lambda + delta);...
-                delta * x(3) - ( tau + sigma )*x(4);...
-                lambda * x(3) + x(4) * sigma + lambda * x(2);...
-                tau * x(4)     ];
-
-    f = casadi.Function('f2', {x}, {eqns2});
-
-    X_sim(:,1) = X0;
-
-    for k=1:N_mhe-1
-
-        % Runge-Kutta 4 integration
-        k1 = f(X_sim(:,k));
-        k2 = f(X_sim(:,k)+Ts/2*k1);
-        k3 = f(X_sim(:,k)+Ts/2*k2);
-        k4 = f(X_sim(:,k)+Ts*k3);
-        x_plus = Ts/6*(k1+2*k2+2*k3+k4);
-        X_sim(:,k+1)=X_sim(:,k) + full(x_plus); % close the gaps - dynamics constraint
-    end
-
-    Xsim.dyn2 = [Xsim.dyn2, X_sim(:,end)];
-end
-
+% for i = 1:size(results.par,1)
+% 
+%     X0 = [  S_data(i);... S starting cond.
+%             I_data(i);... I starting cond.
+%             D_data(i);... D starting cond.
+%             T_data(i);... T starting cond.
+%             H_data(i);... H starting cond.
+%             E_data(i)           ];
+% 
+%      alpha = results.par.alpha(i);
+%      gamma = results.par.gamma(i);
+%      delta = results.par.delta(i);
+%      sigma = results.par.sigma(i);
+%      tau   = results.par.tau(i);
+% 
+%      eqns2 = [ -x(1) * (alpha * x(2));...
+%                 x(1) * (alpha * x(2)) - (gamma+lambda) * x(2);...
+%                 x(2) * gamma - x(3) * (lambda + delta);...
+%                 delta * x(3) - ( tau + sigma )*x(4);...
+%                 lambda * x(3) + x(4) * sigma + lambda * x(2);...
+%                 tau * x(4)     ];
+% 
+%     f = casadi.Function('f2', {x}, {eqns2});
+% 
+%     X_sim(:,1) = X0;
+% 
+%     for k=1:N_mhe-1
+% 
+%         % Runge-Kutta 4 integration
+%         k1 = f(X_sim(:,k));
+%         k2 = f(X_sim(:,k)+Ts/2*k1);
+%         k3 = f(X_sim(:,k)+Ts/2*k2);
+%         k4 = f(X_sim(:,k)+Ts*k3);
+%         x_plus = Ts/6*(k1+2*k2+2*k3+k4);
+%         X_sim(:,k+1)=X_sim(:,k) + full(x_plus); % close the gaps - dynamics constraint
+%     end
+% 
+%     Xsim.dyn2 = [Xsim.dyn2, X_sim(:,end)];
+% end
 
 %% Plotting of results
 
-% S 
-figure(1)
-plot(date(1:358),results.stszero.S, 'o') % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(1,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(1,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),results.sts.S, LineWidth=1.5)
-hold on 
-plot(date(1:end),S_data, '--')
-lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(1) date(end)])
-
-% I
-figure(2)
-plot(date(1:358),results.stszero.I, 'o')
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(2,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(2,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),results.sts.I, LineWidth=1.5)
-hold on 
-plot(date(1:end),I_data, '--')
-lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(1) date(end)])
-
-
-% D
-figure(3)
-plot(date(1:358),results.stszero.D, 'o')
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(3,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(3,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),results.sts.D, LineWidth=1.5)
-hold on 
-plot(date(1:end),D_data, '--')
-lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(1) date(end)])
-
-
-% T
-figure(4)
-plot(date(1:358),results.stszero.T, 'o')
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(4,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(4,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),results.sts.T, LineWidth=1.5)
-hold on 
-plot(date(1:end),T_data, '--')
-lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(1) date(end)])
-
-
-% H 
-figure(5)
-plot(date(1:358),results.stszero.H, 'o')
-hold on 
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(5,:), LineWidth=1.5) % Initial state
-hold on
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(5,:), LineWidth=1.5) % Initial state
-hold on 
-plot(date(N_mhe:358+N_mhe-1),results.sts.H, LineWidth=1.5)
-hold on 
-plot(date(1:end),H_dataAug, '--')
-lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(1) date(end)])
+% % S 
+% figure(1)
+% plot(date(1:358),results.stszero.S, 'o') % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(1,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(1,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),results.sts.S, LineWidth=1.5)
+% hold on 
+% plot(date(1:end),S_data, '--')
+% lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(1) date(end)])
+% 
+% % I
+% figure(2)
+% plot(date(1:358),results.stszero.I, 'o')
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(2,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(2,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),results.sts.I, LineWidth=1.5)
+% hold on 
+% plot(date(1:end),I_data, '--')
+% lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(1) date(end)])
+% 
+% 
+% % D
+% figure(3)
+% plot(date(1:358),results.stszero.D, 'o')
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(3,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(3,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),results.sts.D, LineWidth=1.5)
+% hold on 
+% plot(date(1:end),D_data, '--')
+% lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(1) date(end)])
+% 
+% 
+% % T
+% figure(4)
+% plot(date(1:358),results.stszero.T, 'o')
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(4,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(4,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),results.sts.T, LineWidth=1.5)
+% hold on 
+% plot(date(1:end),T_data, '--')
+% lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(1) date(end)])
+% 
+% 
+% % H 
+% figure(5)
+% plot(date(1:358),results.stszero.H, 'o')
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn(5,:), LineWidth=1.5) % Initial state
+% hold on
+% plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(5,:), LineWidth=1.5) % Initial state
+% hold on 
+% plot(date(N_mhe:358+N_mhe-1),results.sts.H, LineWidth=1.5)
+% hold on 
+% plot(date(1:end),H_dataAug, '--')
+% lgd = legend('$\hat{X_0}$', 'Simulated with MHE', 'Simulated with Data', 'MHE results', 'Real Data', 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(1) date(end)])
 
 
 %% Try to simulate in the future 
 
-ForeWk0 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI.xlsx', 'Sheet', 'Horizon_0_days');
-ForeWk1 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI.xlsx', 'Sheet', 'Horizon_7_days');
-ForeWk2 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI.xlsx', 'Sheet', 'Horizon_14_days');
-ForeWk3 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI.xlsx', 'Sheet', 'Horizon_21_days');
-ForeWk4 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI.xlsx', 'Sheet', 'Horizon_28_days');
-ForeWk5 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI.xlsx', 'Sheet', 'Horizon_35_days');
+ForeWk0 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI2.xlsx', 'Sheet', 'Horizon_0_days');
+ForeWk1 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI2.xlsx', 'Sheet', 'Horizon_7_days');
+ForeWk2 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI2.xlsx', 'Sheet', 'Horizon_14_days');
+ForeWk3 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI2.xlsx', 'Sheet', 'Horizon_21_days');
+ForeWk4 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI2.xlsx', 'Sheet', 'Horizon_28_days');
+ForeWk5 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI2.xlsx', 'Sheet', 'Horizon_35_days');
 
 % Adjusting al the data and reorganize them in Struct - Easier to handle 
 columnHolt = {'alpha_yhat','alpha_yhat_lower','alpha_yhat_upper','gamma_yhat','gamma_yhat_lower','gamma_yhat_upper','delta_yhat','delta_yhat_lower','delta_yhat_upper'...
@@ -272,16 +271,19 @@ for ii = 1:length(paramSets)
       %         H_data(StartHorizon+j+weeksIn(1));... H starting cond.
       %         E_data(StartHorizon+j+weeksIn(1))           ];
 
-       X0 = [  S_data(results.FullStates{1, 84}+j+weeksIn(1));... S starting cond.
-               I_data(StartHorizon+j+weeksIn(1));... I starting cond.
-               D_data(StartHorizon+j+weeksIn(1));... D starting cond.
-               T_data(StartHorizon+j+weeksIn(1));... T starting cond.
-               H_data(StartHorizon+j+weeksIn(1));... H starting cond.
-               E_data(StartHorizon+j+weeksIn(1))           ];
+       X0 = [ results.FullStates{1, 84}.S(j);... S starting cond.
+              results.FullStates{1, 84}.I(j);... I starting cond.
+              results.FullStates{1, 84}.D(j);...... D starting cond.
+              results.FullStates{1, 84}.T(j);...... T starting cond.
+              % results.FullStates{1, 84}.H(j);...;... H starting cond.
+              results.sts.H(StartHorizon+j+weeksIn(1));... H starting cond.
+              results.FullStates{1, 84}.E(j)         ];
 
-            
-        alpha = HoltFore.wk0.(['alpha_', paramSuffix])(j);
-        gamma = HoltFore.wk0.(['gamma_', paramSuffix])(j);
+        
+        alpha = results.par.alpha(StartHorizon+j+weeksIn(1));
+        gamma = results.par.gamma(StartHorizon+j+weeksIn(1));    
+        % alpha = HoltFore.wk0.(['alpha_', paramSuffix])(j);
+        % gamma = HoltFore.wk0.(['gamma_', paramSuffix])(j);
         delta = HoltFore.wk0.(['delta_', paramSuffix])(j);
         sigma = HoltFore.wk0.(['sigma_', paramSuffix])(j);
         tau   = HoltFore.wk0.(['tau_', paramSuffix])(j);
@@ -314,51 +316,51 @@ for ii = 1:length(paramSets)
     end
 end
 
-Xsim.Fore2 = [];
-Xsim.ForeStart2 = [];
+% Xsim.Fore2 = [];
+% Xsim.ForeStart2 = [];
 
-for j = 1:N_mhe
-
-  X0 = [  S_data(StartHorizon+j+weeksIn(1));... S starting cond.
-          I_data(StartHorizon+j+weeksIn(1));... I starting cond.
-          D_data(StartHorizon+j+weeksIn(1));... D starting cond.
-          T_data(StartHorizon+j+weeksIn(1));... T starting cond.
-          H_data(StartHorizon+j+weeksIn(1));... H starting cond.
-          E_data(StartHorizon+j+weeksIn(1))           ];
-
-
-     alpha = results.par.alpha(StartHorizon+j+weeksIn(1));
-     gamma = results.par.gamma(StartHorizon+j+weeksIn(1));
-     delta = results.par.delta(StartHorizon+j+weeksIn(1));
-     sigma = results.par.sigma(StartHorizon+j+weeksIn(1));
-     tau   = results.par.tau(StartHorizon+j+weeksIn(1));
-
-     eqns2 = [ -x(1) * (alpha * x(2));...
-                x(1) * (alpha * x(2)) - (gamma+lambda) * x(2);...
-                x(2) * gamma - x(3) * (lambda + delta);...
-                delta * x(3) - ( tau + sigma )*x(4);...
-                lambda * x(3) + x(4) * sigma + lambda * x(2);...
-                tau * x(4)     ];
-
-    f = casadi.Function('f2', {x}, {eqns2});
-
-    X_sim(:,1) = X0;
-
-    for k=1:N_mhe-1
-
-        % Runge-Kutta 4 integration
-        k1 = f(X_sim(:,k));
-        k2 = f(X_sim(:,k)+Ts/2*k1);
-        k3 = f(X_sim(:,k)+Ts/2*k2);
-        k4 = f(X_sim(:,k)+Ts*k3);
-        x_plus = Ts/6*(k1+2*k2+2*k3+k4);
-        X_sim(:,k+1)=X_sim(:,k) + full(x_plus); % close the gaps - dynamics constraint
-    end
-
-    Xsim.Fore2 = [Xsim.Fore2, X_sim(:,end)];
-    ODEres2 = X_sim;
- 
-end
+% for j = 1:N_mhe
+% 
+%   X0 = [  S_data(StartHorizon+j+weeksIn(1));... S starting cond.
+%           I_data(StartHorizon+j+weeksIn(1));... I starting cond.
+%           D_data(StartHorizon+j+weeksIn(1));... D starting cond.
+%           T_data(StartHorizon+j+weeksIn(1));... T starting cond.
+%           H_data(StartHorizon+j+weeksIn(1));... H starting cond.
+%           E_data(StartHorizon+j+weeksIn(1))           ];
+% 
+% 
+%      alpha = results.par.alpha(StartHorizon+j+weeksIn(1));
+%      gamma = results.par.gamma(StartHorizon+j+weeksIn(1));
+%      delta = results.par.delta(StartHorizon+j+weeksIn(1));
+%      sigma = results.par.sigma(StartHorizon+j+weeksIn(1));
+%      tau   = results.par.tau(StartHorizon+j+weeksIn(1));
+% 
+%      eqns2 = [ -x(1) * (alpha * x(2));...
+%                 x(1) * (alpha * x(2)) - (gamma+lambda) * x(2);...
+%                 x(2) * gamma - x(3) * (lambda + delta);...
+%                 delta * x(3) - ( tau + sigma )*x(4);...
+%                 lambda * x(3) + x(4) * sigma + lambda * x(2);...
+%                 tau * x(4)     ];
+% 
+%     f = casadi.Function('f2', {x}, {eqns2});
+% 
+%     X_sim(:,1) = X0;
+% 
+%     for k=1:N_mhe-1
+% 
+%         % Runge-Kutta 4 integration
+%         k1 = f(X_sim(:,k));
+%         k2 = f(X_sim(:,k)+Ts/2*k1);
+%         k3 = f(X_sim(:,k)+Ts/2*k2);
+%         k4 = f(X_sim(:,k)+Ts*k3);
+%         x_plus = Ts/6*(k1+2*k2+2*k3+k4);
+%         X_sim(:,k+1)=X_sim(:,k) + full(x_plus); % close the gaps - dynamics constraint
+%     end
+% 
+%     Xsim.Fore2 = [Xsim.Fore2, X_sim(:,end)];
+%     ODEres2 = X_sim;
+% 
+% end
 
 
 %% Plotting of results
@@ -375,10 +377,6 @@ hold on
 fill([date(StartHorizon+N_mhe:StartHorizon++N_mhe+N_mhe-1) flip(date(StartHorizon+N_mhe:StartHorizon++N_mhe+N_mhe-1))],...
      [Xsim.Fore.sim_yhat_upper(2,:) flip(Xsim.Fore.sim_yhat_lower(2,:))], Xholt_color,'FaceAlpha',.3,'EdgeColor', 'none','HandleVisibility', 'off')
 hold on
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(2,:), LineWidth=1.5) % New fitted model
-hold on 
-plot(date(StartHorizon+N_mhe:StartHorizon+N_mhe+N_mhe-1), Xsim.Fore2(2,:), LineWidth=2 )
-hold on 
 xline(date(StartHorizon+N_mhe),":",'HandleVisibility', 'off')
 lgd = legend('MHE results', 'Real Data', '21 days Future Forecast','Simulation From Data','21 days Future Forecast sim param','Interpreter', 'Latex');
 lgd.FontSize = 18;
@@ -441,10 +439,6 @@ hold on
 fill([date(StartHorizon+N_mhe:StartHorizon+N_mhe+N_mhe-1) flip(date(StartHorizon+N_mhe:StartHorizon+N_mhe+N_mhe-1))],...
      [Xsim.Fore.sim_yhat_upper(5,:) flip(Xsim.Fore.sim_yhat_lower(5,:))], Xholt_color,'FaceAlpha',.3,'EdgeColor', 'none','HandleVisibility', 'off')
 hold on
-plot(date(N_mhe:358+N_mhe-1),Xsim.dyn2(5,:), LineWidth=1.5) % New fitted model
-hold on 
-plot(date(StartHorizon+N_mhe:StartHorizon+N_mhe+N_mhe-1), Xsim.Fore2(5,:), LineWidth=2 )
-hold on 
 xline(date(StartHorizon+N_mhe),":",'HandleVisibility', 'off')
 lgd = legend('MHE results', 'Real Data', '21 days Future Forecast','Simulation From Data','21 days Future Forecast sim param','Interpreter', 'Latex');
 lgd.FontSize = 18;

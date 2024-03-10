@@ -74,5 +74,4 @@ t = 1:399;
 data = [S_data', I_data', D_data', T1_data', T2_data', H_data'];
 
 [opt, DeltaV] = identif_test(f2, C, t', data, x0, par0);
-
-% 
+DeltaV

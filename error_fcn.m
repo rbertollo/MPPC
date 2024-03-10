@@ -2,7 +2,7 @@ function e = error_fcn(dyn, data_times, data_values, x0, C, par, penalty, vararg
 
     % Simulate the system trajectories
     opts = odeset('RelTol',1e-3,'AbsTol',1e-6);
-    [t,x] = ode45(@(t,x) dyn(x,input_data(t),par), data_times(2:end)-1, x0, opts);
+    [t,x] = ode45(@(t,x) dyn(x,par), data_times(2:end)-1, x0, opts);
     
     % Compute the measured output
     y = zeros(length(t),size(C,1));

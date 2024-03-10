@@ -7,11 +7,12 @@ addpath('/Users/marcodelloro/Downloads/casadi-3.6.3-osx64-matlab2018b')
 import casadi.*;
 
 load('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Data_Collection/Italian Dataset/SIDTTHE_data_DEF.mat');
-set(0,'DefaultFigureWindowStyle','docked');
+% set(0,'DefaultFigureWindowStyle','docked');
 
 dataset = readtable('Italy_complete_dataset.xlsx');
 dataset = dataset(190:588,:);
 dataset.data = datetime(dataset.data, 'InputFormat', 'dd-MMM-yyyy HH:mm:ss');
+load('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Data_Collection/Italian Dataset/Var_Infected.mat')
 
 %%  Data Loading and Initialization
 
@@ -143,7 +144,7 @@ opts.ipopt.print_level = 0;
 opti.solver('ipopt', opts);
 
 xtilde = y_meas(1:6,1);    
-ptilde = [0.25; 0.12; 0.01; 0.02; 0.1 ];
+ptilde = [0.25; 0.12; 0.01; 0.02; 0.02];
 dyn = [xtilde' ptilde' ];
 Pi_min = diag([std(S_data), std(I_data), std(D_data), std(T_data), std(H_data), std(E_data) 0.01, 0.01, 0.01, 0.01, 0.01]);
 
@@ -160,22 +161,21 @@ column_names_sts = {'S', 'I', 'D', 'T', 'H', 'E'};
 
 %Initialization of ful state matri
 iterationIndex = 1;
-tables3D = cell(1, N - 2*N_mhe + 1);
 
 for k = N_mhe:1:N-N_mhe
     % matrices for EKF cov. update
     [A,C,G] = getMatricesEKF(dyn);
     Q = diag([1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.1, 0.1, 0.1, 0.1, 0.1]);
     R = [0.0387	0.0387 0.00570 0.0080 0.00076 0.006];
-    Z1 = diag([2 1 5 5 2 2]);
-    Z2 = diag([10 25 35 15 10]);
+    Z1 = diag([1 1 5 5 2 1]);
+    Z2 = diag([1.5 25 40 15 10]);
     Pi = G*Q*G' + A*Pi_min*A' - A*Pi_min*C'*inv(R + C*Pi_min*C')*C*Pi_min*A';
-
+    Zinitial_cond = diag([1 1 1 1 1 1]);
     cost1 = [X(1:6,1) - xtilde; X(7:11,1) - ptilde]'*inv(Pi)*[X(1:6,1) - xtilde; X(7:11,1) - ptilde];
  
     obj = []; % initialization of the object for every iteration 
-    obj = 0.1*sumsqr(X(1:6,:) - xtilde) + 100*sumsqr(Z2*(X(7:11,:) - ptilde)) + sumsqr( Z1*(y_meas(:,k-N_mhe+1:k) - X(1:6,:))./std(y_meas,1,2) ) + 100*sumsqr(v); 
-    % obj = 100*cost1 + sumsqr( Z*(y_meas(:,k-N_mhe+1:k) - X(1:6,:))./std(y_meas,1,2) ) + 100*sumsqr(v);   
+    obj = sumsqr(Zinitial_cond*(X(1:6,:) - xtilde)) + 100*sumsqr(Z2*(X(7:11,:) - ptilde)) + sumsqr( Z1*(y_meas(:,k-N_mhe+1:k) - X(1:6,:))./std(y_meas,1,2) ) + 100*sumsqr(v); 
+    % obj = 100*cost1 + sumsqr( Z1*(y_meas(:,k-N_mhe+1:k) - X(1:6,:))./std(y_meas,1,2) ) + 100*sumsqr(v);   
     opti.minimize(obj);
 
     sol = opti.solve();
@@ -186,6 +186,7 @@ for k = N_mhe:1:N-N_mhe
     states_dyn = opti.value(X(1:6,end))';
     states_zero = opti.value(X(1:6,1))';
     
+    % CURRENT STATE SAVE
     currentState = opti.value(X(1:6,:))';
     currentTable = array2table(currentState, 'VariableNames', column_names_sts);
     stateTables{iterationIndex} = currentTable; % Saving all the tables in the cell struct
@@ -196,7 +197,6 @@ for k = N_mhe:1:N-N_mhe
     matrix_sts = [matrix_sts; states_dyn];
     matrix_szero = [matrix_szero; states_zero];
    
-
     ptilde = opti.value(X(7:11,1));
     xtilde = opti.value(X(1:6,2));
 end
@@ -217,10 +217,10 @@ results.FullStates = stateTables;
 
 % save the results in a CSV to import in into Python
 path = '/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython';
-filePathPar = fullfile(path, 'table_par.csv');
+filePathPar = fullfile(path, 'table_par2.csv');
 writetable(results.par, filePathPar);
 
-save('results.mat', 'results');
+save('results2.mat', 'results');
 
 %% Additional Intersting plots,
 
@@ -243,92 +243,202 @@ customColors2 = {   [1, 0.6, 0.2],
 for ii = 1:length(policy_dates)-1
 
     area.x(ii, :) = [policy_dates(ii) policy_dates(ii) policy_dates(ii+1) policy_dates(ii+1)];
-    area.y_alpha(ii, :) = [min(results.par.alpha)*0.5 max(results.par.alpha)*1.05 max(results.par.alpha)*1.05 min(results.par.alpha)*0.5];
+    area.y_alpha(ii, :) = [0 max(results.par.alpha)*1.5 max(results.par.alpha)*1.5 0];
 end
 
 % States
 figure(1)
-plt=plot(date(N_mhe:N-N_mhe),results.sts.S, 's-', 'LineWidth', 1, 'MarkerSize', 5);
-plt.MarkerFaceColor = plt.Color;
-hold on
-plot(date(N_mhe:N-N_mhe), S_data(N_mhe:N-N_mhe), LineWidth=1.5)
+scatter(date(N_mhe:N-N_mhe), S_data(N_mhe:N-N_mhe),20,'filled')
+hold on 
+plot(date(N_mhe:N-N_mhe),results.sts.S, 'LineWidth', 1.5, 'MarkerSize', 5);
 xlim([date(1+N_mhe), date(end-N_mhe)])
 title('\textbf{S}','Interpreter','latex')
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','northeast');
+lgd.FontSize = 18;
 
 figure(2)
-plt=plot(date(N_mhe:N-N_mhe),results.sts.I, 's-', 'LineWidth', 1, 'MarkerSize', 5);
-plt.MarkerFaceColor = plt.Color;
+sct = scatter(date(N_mhe:N-N_mhe), I_data(N_mhe:N-N_mhe),40,'filled','MarkerEdgeAlpha', 0.3,'MarkerFaceAlpha', 0.3); % Set face transparency
+colorsct=[0, 0.4470, 0.7410];
 hold on 
-plot(date(N_mhe:N-N_mhe), I_data(N_mhe:N-N_mhe), LineWidth=1.5)
+fill(var_area.x,var_area.Ivar/Npop, colorsct, 'FaceAlpha', .1, 'EdgeColor', 'none');
+hold on
+plot(date(N_mhe:N-N_mhe),results.sts.I, 'LineWidth', 2, 'MarkerSize', 5,'Color',[0.8500 0.3250 0.0980]);
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{I}','Interpreter','latex')
+% title('\textbf{\textit{I}-Infected individuals}','Interpreter','latex')
+yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+% yax.FontSize = 14;
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+lgd = legend('Estimated Data', '95\% confidence interval','MHE Fitted Data','Interpreter','latex','location','northeast');
+% lgd.FontSize = 14;
 
 figure(3)
-plt=plot(date(N_mhe:N-N_mhe),results.sts.D, 's-', 'LineWidth', 1, 'MarkerSize', 5);
-plt.MarkerFaceColor = plt.Color;
+scatter(date(N_mhe:N-N_mhe), D_data(N_mhe:N-N_mhe),40,'filled')
 hold on 
-plot(date(N_mhe:N-N_mhe), D_data(N_mhe:N-N_mhe), LineWidth=1.5)
+plot(date(N_mhe:N-N_mhe),results.sts.D, 'LineWidth', 2, 'MarkerSize', 5);
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{D}','Interpreter','latex')
+% title('\textbf{\textit{D} - Detected individuals}','Interpreter','latex')
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+% yax.FontSize = 14;
+lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','northeast');
+% lgd.FontSize = 14;
 
 figure(4)
-plt=plot(date(N_mhe:N-N_mhe),results.sts.T, 's-', 'LineWidth', 1, 'MarkerSize', 5);
-plt.MarkerFaceColor = plt.Color;
+scatter(date(N_mhe:N-N_mhe), T_data(N_mhe:N-N_mhe),40,'filled')
 hold on 
-plot(date(N_mhe:N-N_mhe), T_data(N_mhe:N-N_mhe), LineWidth=1.5)
+plot(date(N_mhe:N-N_mhe),results.sts.T, 'LineWidth', 2, 'MarkerSize', 5);
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{T}','Interpreter','latex')
+% title('\textbf{\textit{T} - Hospitalised and ICUs individuals}','Interpreter','latex')
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+% yax.FontSize = 14;
+% lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','northeast');
+% lgd.FontSize = 18;
 
 figure(5)
-plt=plot(date(N_mhe:N-N_mhe),results.sts.H, 's-', 'LineWidth', 1, 'MarkerSize', 5);
-plt.MarkerFaceColor = plt.Color;
+scatter(date(N_mhe:N-N_mhe), H_data(N_mhe:N-N_mhe),40,'filled')
 hold on 
-plot(date(N_mhe:N-N_mhe), H_dataAug(N_mhe:N-N_mhe), LineWidth=1.5)
+% scatter(date(N_mhe:N-N_mhe), H_dataAug(N_mhe:N-N_mhe),20,'filled')
+% hold on 
+plot(date(N_mhe:N-N_mhe),results.sts.H, 'LineWidth', 2, 'MarkerSize', 5);
+% hold on 
+% plot(date(N_mhe:N-N_mhe),results.stszero.H, 'LineWidth', 1.5, 'MarkerSize', 5);
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{H}','Interpreter','latex')
+% title('\textbf{\textit{H} - Healed individuals}','Interpreter','latex')
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+% yax.FontSize = 14;
+% lgd = legend('Real Data', 'Augmented Data','MHE Fitted Data','MHE $x_0$', 'Interpreter','latex','location','northeast');
+% lgd.FontSize = 18;
 
-figure(12)
-plt=plot(date(N_mhe:N-N_mhe),results.sts.E, 's-', 'LineWidth', 1, 'MarkerSize', 5);
-plt.MarkerFaceColor = plt.Color;
+figure(106)
+scatter(date(N_mhe:N-N_mhe), E_data(N_mhe:N-N_mhe),40,'filled')
 hold on 
-plot(date(N_mhe:N-N_mhe), E_data(N_mhe:N-N_mhe), LineWidth=1.5)
+plot(date(N_mhe:N-N_mhe),results.sts.E, 'LineWidth', 2, 'MarkerSize', 5);
+hold on 
+% plot(date(N_mhe:N-N_mhe),results.stszero.E, 'LineWidth', 1.5, 'MarkerSize', 5);
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{H}','Interpreter','latex')
+% title('\textbf{\textit{D} - Expired individuals}','Interpreter','latex')
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+% yax.FontSize = 14;
+% lgd = legend('Real Data', 'MHE Fitted Data','Fitted $x_0$','Interpreter','latex','location','northeast');
+% lgd.FontSize = 18;
+
 
 % Figure of the alpha trend related to policy In italy
 figure(10)
 for ii = 1:length(policy_dates)-1
-    fill(area.x(ii, :) ,area.y_alpha(1, :), customColors2{ii,1} ,'FaceAlpha',.5,'EdgeColor', 'none','HandleVisibility', 'off')
+    handleVisibilityValue = 'off';
+    if ii >= 1 && ii <= 4
+        handleVisibilityValue = 'on';
+    end
+    
+    fill(area.x(ii, :) ,area.y_alpha(1, :), customColors2{ii,1} ,...
+        'FaceAlpha',.5,'EdgeColor', 'none','HandleVisibility', handleVisibilityValue)
     hold on
     xline(policy_dates(ii),":",'HandleVisibility', 'off')
     hold on 
 end
 hold on
-plot(date(N_mhe:N-N_mhe), results.par.alpha,'k','LineWidth',1.5, 'DisplayName', '$\alpha$')
-ylabel('Coefficients Values','Interpreter','latex')
-title('\textbf{$\alpha$ coefficient}','Interpreter','latex')
+plot(date(N_mhe:N-N_mhe), results.par.alpha,'k','LineWidth',2, 'DisplayName', '$\alpha$','HandleVisibility', 'off')
+yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+% yax.FontSize = 14;
+% title('\textbf{$\alpha$ coefficient}','Interpreter','latex')
 grid on
-legend('Interpreter','latex','location','southeast')
+lgd = legend('Mild Restrictions', 'NPIs \& Social Limitations','Curfew','Total Lockdown','Interpreter','latex','location','northeast');
+% lgd.FontSize = 18;
+title(lgd, '\textbf{Policy Level}');
 xlim([date(1+N_mhe), date(end-N_mhe)])
-ylim([min(results.par.alpha)*0.5, max(results.par.alpha)*1.05])
+ylim([0, max(results.par.alpha)*1.5])
 set(gca, 'TickLabelInterpreter', 'Latex')
 
+
 figure(6)
-plot(date(N_mhe:N-N_mhe),results.par.gamma, 'LineWidth', 1.5, 'Color','k')
+plot(date(N_mhe:N-N_mhe),results.par.gamma, 'LineWidth', 2, 'Color','k')
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{$\gamma$}','Interpreter','latex')
+ylim([0, max(results.par.gamma)*1.5])
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+% yax.FontSize = 14;
+% title('\textbf{$\gamma$}','Interpreter','latex')
 
 figure(7)
-plot(date(N_mhe:N-N_mhe),results.par.delta, 'LineWidth', 1.5, 'Color','k')
+plot(date(N_mhe:N-N_mhe),results.par.delta, 'LineWidth', 2, 'Color','k')
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{$\delta$}','Interpreter','latex')
+ylim([0, max(results.par.delta)*1.2])
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+% yax.FontSize = 14;
+% title('\textbf{$\delta$}','Interpreter','latex')
 
 figure(8)
-plot(date(N_mhe:N-N_mhe),results.par.sigma, 'LineWidth', 1.5, 'Color','k')
+plot(date(N_mhe:N-N_mhe),results.par.sigma, 'LineWidth', 2, 'Color','k')
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{$\sigma$}','Interpreter','latex')
+ylim([0, max(results.par.sigma)*1.5])
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+% title('\textbf{$\sigma$}','Interpreter','latex')
+yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+% yax.FontSize = 14;
 
 figure(9)
-plot(date(N_mhe:N-N_mhe),results.par.tau, 'LineWidth', 1.5, 'Color','k')
+plot(date(N_mhe:N-N_mhe),results.par.tau, 'LineWidth', 2, 'Color','k')
 xlim([date(1+N_mhe), date(end-N_mhe)])
-title('\textbf{$\tau$}','Interpreter','latex')
+ylim([0, max(results.par.tau)*1.5])
+grid on
+set(gca, 'TickLabelInterpreter', 'Latex')
+yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+% yax.FontSize = 14;
+% title('\textbf{$\tau$}','Interpreter','latex')
+
+mape_error = struct();
+struct_idx = {'S', 'I', 'D', 'T', 'H', 'E'};
+y_meas2 = [S_data; I_data; D_data; T_data; H_data; E_data];
+
+% Iterate over y_meas
+for i = 1:size(y_meas2,1)
+    y_true = y_meas2(i,:);
+    y_true = y_true(N_mhe:N-N_mhe);
+    y_pred = results.sts.(struct_idx{i})';
+    mape = mapeFunc(y_true, y_pred);        % MAPE formula
+
+    mape_error.(struct_idx{i}) = mape;
+    rmse = sqrt(mean((y_true - y_pred).^2));  % RMSE formula
+    rmse_error.(struct_idx{i}) = rmse;  % Store the RMSE in the structure
+end
+%%
+N_mhe = 21;    % Estimation horizon (3 weeks)
+StartHorizon = 10*N_mhe; % we are here
+
+mape_errorFore = struct();
+struct_idx = {'S', 'I', 'D', 'T', 'H', 'E'};
+y_meas2 = [S_data; I_data; D_data; T_data; H_data; E_data];
+
+% Iterate over y_meas
+weekAfter = [0,7,14,21,28,35,42,49];
+
+for jj = 1:8
+    StartHorizon = 10*N_mhe + weekAfter(jj);
+    for i = 1:size(y_meas2,1)
+        y_true = y_meas2(i,:);
+        y_true = y_true(N_mhe:StartHorizon+N_mhe-1);  % Adjusted indexing to match MATLAB's 1-based indexing
+        y_pred = results.sts.(struct_idx{i})(1:StartHorizon)';
+        mape = mapeFunc(y_true, y_pred);  % MAPE formula
+
+        if ~isfield(mape_errorFore, ['weekAfter' num2str(weekAfter(jj))])
+            mape_errorFore.(['weekAfter' num2str(weekAfter(jj))]) = struct();
+        end
+        % Store the mape for the current compartment and weekAfter index
+        mape_errorFore.(['weekAfter' num2str(weekAfter(jj))]).(struct_idx{i}) = mape;
+    end
+end

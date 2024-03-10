@@ -16,11 +16,10 @@ eqns = [    -S * (alpha * I);...
              S * (alpha * I) - (gamma + lambda) * I;...
              I * gamma - D * (lambda + delta);...
              delta * D - (tau + sigma)*T;...
-             lambda * D + T * sigma + lambda * I;...
-             tau*T];
+             lambda * D + T * sigma + lambda * I    ];
 
 
-vars = [S I D T H E alpha gamma delta sigma tau];
+vars = [S I D T H alpha gamma delta sigma tau];
 coefs = [lambda];
 
 % Passing the vector of equations 
@@ -103,9 +102,10 @@ par = [lambda];
 opti.subject_to(lambda(1:end) >= 0);   % bound on lambda value
 opti.subject_to(lambda(1:end) <= 0.2);
 
-for jj = 1:N-1
-        opti.subject_to( lambda(1,jj + 1) == lambda(1,jj) )
-end
+% for jj = 1:N-1
+%         opti.subject_to( lambda(1,jj + 1) <= 1.1*lambda(1,jj) )
+%         opti.subject_to( lambda(1,jj + 1) >= 0.9*lambda(1,jj) )
+% end
 
 % Simulation with RK45
 
@@ -129,7 +129,9 @@ x_obj = [x(1, :), x(2, :), x(3, :), x(4, :), x(5, :)];
 maxData =( ones(N,1)*max(data,[],2)' )';
 maxData = horzcat(maxData(:));
 
-obj = sum(((data_obj - x_obj')./maxData).^2)*0.01;
+coefs_matrix_obj = [ sum( (diff(lambda)./0.1).^2 )];
+
+obj = sum(((data_obj - x_obj')./maxData).^2)*0.01 + 1e-3*coefs_matrix_obj;
 opti.minimize(obj);
 p_opts = struct('expand', false);
 s_opts = struct('max_iter',1e4, 'tol',1e-4,'constr_viol_tol',1e-4,'compl_inf_tol',1e-4,'linear_solver','MA97'); %'MA27' 'MA57' 'MA77' 'MA86' 'MA97'
