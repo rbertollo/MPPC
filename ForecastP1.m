@@ -89,12 +89,12 @@ end
 
 %% Try to simulate in the future 
 
-ForeWk0 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI4.xlsx', 'Sheet', 'Horizon_0_days');
-ForeWk1 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI4.xlsx', 'Sheet', 'Horizon_7_days');
-ForeWk2 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI4.xlsx', 'Sheet', 'Horizon_14_days');
-ForeWk3 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI4.xlsx', 'Sheet', 'Horizon_21_days');
-ForeWk4 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI4.xlsx', 'Sheet', 'Horizon_28_days');
-ForeWk5 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI4.xlsx', 'Sheet', 'Horizon_35_days');
+ForeWk0 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI3.xlsx', 'Sheet', 'Horizon_0_days');
+ForeWk1 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI3.xlsx', 'Sheet', 'Horizon_7_days');
+ForeWk2 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI3.xlsx', 'Sheet', 'Horizon_14_days');
+ForeWk3 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI3.xlsx', 'Sheet', 'Horizon_21_days');
+ForeWk4 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI3.xlsx', 'Sheet', 'Horizon_28_days');
+ForeWk5 = readtable('/Users/marcodelloro/Desktop/Thesis/MSc-Thesis-TUe/Forecasting/TrialPython/Forecasts21d_CI3.xlsx', 'Sheet', 'Horizon_35_days');
 
 % Adjusting al the data and reorganize them in Struct - Easier to handle 
 columnHolt = {'alpha_yhat','alpha_yhat_lower','alpha_yhat_upper','gamma_yhat','gamma_yhat_lower','gamma_yhat_upper','delta_yhat','delta_yhat_lower','delta_yhat_upper'...
@@ -121,7 +121,7 @@ ProphFore.wk3 = ForeWk3(:, columnProph);
 ProphFore.wk4 = ForeWk4(:, columnProph);
 ProphFore.wk5 = ForeWk5(:, columnProph);
 
-StartHorizon = 7*N_mhe; % we are here
+StartHorizon = 10*N_mhe; % we are here
 weeksIn = [0, 7, 14, 21, 28, 35];
 
 % Forecast for the next 21 day from where we are w/ Data ()
@@ -325,10 +325,11 @@ end
 lgd = legend('Real Data', 'Data 95\% confidence interval', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex');
 % lgd.FontSize = 18;
 % title('I-Infected', 'Interpreter', 'Latex');
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+yax = ylabel('Normalized Population','Interpreter','latex');
 xlim([date(1+N_mhe), date(end-N_mhe)])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
 
 % D 
@@ -357,12 +358,13 @@ for pp = 1:length(weeksIn)
     
     hold on
 end
-lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='northeast');
+lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='southeast'); %'northeast'
 % lgd.FontSize = 18;
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
-xlim([date(70), date(end-N_mhe-60)])
+yax = ylabel('Normalized Population','Interpreter','latex');
+xlim([date(100), date(end-N_mhe-80)])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
 
 % T 
@@ -390,41 +392,42 @@ for pp = 1:length(weeksIn)
     
     hold on
 end
-lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='northeast');
+% lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='southeast');
 % lgd.FontSize = 18;
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
-xlim([date(70), date(end-N_mhe-60)])
+yax = ylabel('Normalized Population','Interpreter','latex');
+xlim([date(100), date(end-N_mhe-80)])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on
 
 
-% H 
-figure(14)
-plot(date(1:end), H_data, '--') % Plot the real data
-hold on
-plot(date(N_mhe:358+N_mhe-1), Xsim.dyn(5,:), 'LineWidth', 1.5) % Plot the new fitted model
-
-for pp = 1:length(weeksIn)
-    currentWeekField = sprintf('wk%d', pp-1);
-    startIdx = N_mhe + StartHorizon + weeksIn(pp) - 1;
-    endIdx = startIdx + N_mhe - 1;
-    
-    Xholt_plot = plot(date(startIdx:endIdx), Sim.Holt.(currentWeekField).sim_yhat(5,:), 'LineWidth', 1.5);
-    Xholt_color = Xholt_plot.Color;
-    fill([date(startIdx:endIdx) flip(date(startIdx:endIdx))],...
-         [Sim.Holt.(currentWeekField).sim_yhat_upper(5,:) flip(Sim.Holt.(currentWeekField).sim_yhat_lower(5,:))],...
-         Xholt_color, 'FaceAlpha', .3, 'EdgeColor', 'none');
-    hold on
-    Xcost_plt = plot(date(startIdx:endIdx), Sim.Const.(currentWeekField)(5,:), 'LineWidth', 2,'LineStyle','-.');
-
-    xline(date(startIdx), ":", 'HandleVisibility', 'off');
-    
-    hold on 
-end
-lgd = legend('Real Data', 'MHE results', sprintf('%d days Future Forecast', N_mhe), 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(70), date(end-N_mhe-60)])
-title('H-Healed', 'Interpreter', 'Latex'); 
+% % H 
+% figure(14)
+% plot(date(1:end), H_data, '--') % Plot the real data
+% hold on
+% plot(date(N_mhe:358+N_mhe-1), Xsim.dyn(5,:), 'LineWidth', 1.5) % Plot the new fitted model
+% 
+% for pp = 1:length(weeksIn)
+%     currentWeekField = sprintf('wk%d', pp-1);
+%     startIdx = N_mhe + StartHorizon + weeksIn(pp) - 1;
+%     endIdx = startIdx + N_mhe - 1;
+% 
+%     Xholt_plot = plot(date(startIdx:endIdx), Sim.Holt.(currentWeekField).sim_yhat(5,:), 'LineWidth', 1.5);
+%     Xholt_color = Xholt_plot.Color;
+%     fill([date(startIdx:endIdx) flip(date(startIdx:endIdx))],...
+%          [Sim.Holt.(currentWeekField).sim_yhat_upper(5,:) flip(Sim.Holt.(currentWeekField).sim_yhat_lower(5,:))],...
+%          Xholt_color, 'FaceAlpha', .3, 'EdgeColor', 'none');
+%     hold on
+%     Xcost_plt = plot(date(startIdx:endIdx), Sim.Const.(currentWeekField)(5,:), 'LineWidth', 2,'LineStyle','-.');
+% 
+%     xline(date(startIdx), ":", 'HandleVisibility', 'off');
+% 
+%     hold on 
+% end
+% lgd = legend('Real Data', 'MHE results', sprintf('%d days Future Forecast', N_mhe), 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(70), date(end-N_mhe-60)])
+% title('H-Healed', 'Interpreter', 'Latex'); 
 
 % E - first week
 figure(15)
@@ -451,12 +454,13 @@ for pp = 1:length(weeksIn)
     
     hold on 
 end
-lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='southeast');
+% lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='southeast');
 % lgd.FontSize = 18;
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
-xlim([date(70), date(end-N_mhe-60)])
+yax = ylabel('Normalized Population','Interpreter','latex');
+xlim([date(100), date(end-N_mhe-80)])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
 
 %% Plotting of results (Prophet)
@@ -486,7 +490,7 @@ for pp = 1:length(weeksIn)
 end
 lgd = legend('Real Data', 'MHE results', sprintf('%d days Future Forecast', N_mhe), 'Interpreter', 'Latex');
 lgd.FontSize = 18;
-xlim([date(1), date(end-N_mhe-60)])
+xlim([date(100), date(end-N_mhe-80)])
 title('I-Infected', 'Interpreter', 'Latex');
 
 
@@ -496,7 +500,7 @@ plot(date(1:end), D_data, '--','LineWidth', 1.5) % Plot the real data
 hold on
 plot(date(N_mhe:N_mhe+StartHorizon-1), Xsim.dyn(3,1:StartHorizon), 'LineWidth', 2,'Color',[0.8500 0.3250 0.0980]) % Plot the new fitted model
 hold on
-plot(date(N_mhe+StartHorizon:358+N_mhe-1), Xsim.dyn(3,StartHorizon+1:end), 'LineWidth', 2,'Color',[0.94 0.73 0.6392], 'HandleVisibility', 'off')
+plot(date(N_mhe+StartHorizon-1:358+N_mhe-1), Xsim.dyn(3,StartHorizon:end), 'LineWidth', 2,'Color',[0.94 0.73 0.6392], 'HandleVisibility', 'off')
 hold on 
 for pp = 1:length(weeksIn)
     currentWeekField = sprintf('wk%d', pp-1);
@@ -513,13 +517,14 @@ for pp = 1:length(weeksIn)
     
     hold on
 end
-lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='northeast');
+% lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='northeast');
 % lgd.FontSize = 18;
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
-xlim([date(70), date(end-N_mhe-60)])
+yax = ylabel('Normalized Population','Interpreter','latex');
+xlim([date(100), date(end-N_mhe-80)])
 % ylim([0 0.021])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
 
 
@@ -547,38 +552,39 @@ for pp = 1:length(weeksIn)
     
     hold on
 end
-lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='northeast');
+% lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='northeast');
 % lgd.FontSize = 18;
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
-xlim([date(70), date(end-N_mhe-60)])
+yax = ylabel('Normalized Population','Interpreter','latex');
+xlim([date(100), date(end-N_mhe-80)])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
-% H 
-figure(24)
-plot(date(1:end), H_data, '--', 1.5) % Plot the real data
-hold on
-plot(date(N_mhe:358+N_mhe-1), Xsim.dyn(5,:), 'LineWidth', 1.5) % Plot the new fitted model
-
-for pp = 1:length(weeksIn)
-    currentWeekField = sprintf('wk%d', pp-1);
-    startIdx = N_mhe + StartHorizon + weeksIn(pp) - 1;
-    endIdx = startIdx + N_mhe - 1;
-    
-    XProph_plot = plot(date(startIdx:endIdx), Sim.Proph.(currentWeekField).sim_yhat(5,:), 'LineWidth', 1.5);
-    XProph_color = XProph_plot.Color;
-    fill([date(startIdx:endIdx) flip(date(startIdx:endIdx))],...
-         [Sim.Proph.(currentWeekField).sim_yhat_upper(5,:) flip(Sim.Proph.(currentWeekField).sim_yhat_lower(5,:))],...
-         XProph_color, 'FaceAlpha', .3, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-
-    xline(date(startIdx), ":", 'HandleVisibility', 'off');
-    
-    hold on 
-end
-lgd = legend('Real Data', 'MHE results', sprintf('%d days Future Forecast', N_mhe), 'Interpreter', 'Latex');
-lgd.FontSize = 18;
-xlim([date(70), date(end-N_mhe-60)])
-title('H-Healed', 'Interpreter', 'Latex'); 
+% % H 
+% figure(24)
+% plot(date(1:end), H_data, '--', 1.5) % Plot the real data
+% hold on
+% plot(date(N_mhe:358+N_mhe-1), Xsim.dyn(5,:), 'LineWidth', 1.5) % Plot the new fitted model
+% 
+% for pp = 1:length(weeksIn)
+%     currentWeekField = sprintf('wk%d', pp-1);
+%     startIdx = N_mhe + StartHorizon + weeksIn(pp) - 1;
+%     endIdx = startIdx + N_mhe - 1;
+% 
+%     XProph_plot = plot(date(startIdx:endIdx), Sim.Proph.(currentWeekField).sim_yhat(5,:), 'LineWidth', 1.5);
+%     XProph_color = XProph_plot.Color;
+%     fill([date(startIdx:endIdx) flip(date(startIdx:endIdx))],...
+%          [Sim.Proph.(currentWeekField).sim_yhat_upper(5,:) flip(Sim.Proph.(currentWeekField).sim_yhat_lower(5,:))],...
+%          XProph_color, 'FaceAlpha', .3, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+% 
+%     xline(date(startIdx), ":", 'HandleVisibility', 'off');
+% 
+%     hold on 
+% end
+% lgd = legend('Real Data', 'MHE results', sprintf('%d days Future Forecast', N_mhe), 'Interpreter', 'Latex');
+% lgd.FontSize = 18;
+% xlim([date(70), date(end-N_mhe-60)])
+% title('H-Healed', 'Interpreter', 'Latex'); 
 
 % E - first week
 figure(25)
@@ -604,12 +610,13 @@ for pp = 1:length(weeksIn)
     
     hold on 
 end
-lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='southeast');
+% lgd = legend('Real Data', 'MHE Fitted Data', sprintf('%d days Ahead Forecast', N_mhe), 'Forecast 95\% confidence interval', 'Interpreter', 'Latex',Location='southeast');
 % lgd.FontSize = 18;
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
-xlim([date(70), date(end-N_mhe-60)])
+yax = ylabel('Normalized Population','Interpreter','latex');
+xlim([date(100), date(end-N_mhe-80)])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
 %% Score Function 
 

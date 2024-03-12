@@ -140,12 +140,13 @@ for pp = 1:length(weeksIn)
     fill([date(startIdx:endIdx) flip(date(startIdx:endIdx))],...
          [HoltFore.(currentWeekField).alpha_yhat_upper' flip(HoltFore.(currentWeekField).alpha_yhat_lower)'],...
           Xholt_color, 'FaceAlpha', .3, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    ylabel('\textbf{Coefficients Values}','Interpreter','latex')
+    ylabel('Coefficients Values','Interpreter','latex')
     % title('\textbf{$\alpha$ }','Interpreter','latex')
     grid on
-    lgd = legend('Interpreter','latex','location','southeast');
+    % lgd = legend('Interpreter','latex','location','southeast');
     ylim([0,max(results.par.alpha)*1.5])
     set(gca, 'TickLabelInterpreter', 'Latex')
+    box on 
 
 end
 
@@ -185,22 +186,23 @@ for pp = 1:length(weeksIn)
     endIdx = startIdx + N_mhe;
     figure;
     
-    plot(date(startIdx-dd:startIdx), results.par.delta(startIdx-dd-N_mhe:startIdx-N_mhe),'LineWidth',1.5, 'DisplayName', '$\delta$ Past')
+    plot(date(startIdx-dd:startIdx), results.par.delta(startIdx-dd-N_mhe:startIdx-N_mhe),'LineWidth',2, 'DisplayName', '$\delta$ Past')
     hold on
-    Xholt_plot = plot(date(startIdx:endIdx), HoltFore.(currentWeekField).delta_yhat,'LineWidth',1.5,'DisplayName', '$\delta$ Forecasted');
+    Xholt_plot = plot(date(startIdx:endIdx), HoltFore.(currentWeekField).delta_yhat,'LineWidth',2,'DisplayName', '$\delta$ Forecasted');
     hold on
-    plot(date(startIdx:endIdx), results.par.delta(startIdx-N_mhe:endIdx-N_mhe),'k','LineWidth',1.5,'LineStyle','--','DisplayName', '$\delta$ Future')
+    plot(date(startIdx:endIdx), results.par.delta(startIdx-N_mhe:endIdx-N_mhe),'k','LineWidth',2,'LineStyle','--','DisplayName', '$\delta$ Future')
     hold on
     Xholt_color = Xholt_plot.Color;
     fill([date(startIdx:endIdx) flip(date(startIdx:endIdx))],...
          [HoltFore.(currentWeekField).delta_yhat_upper' flip(HoltFore.(currentWeekField).delta_yhat_lower)'],...
           Xholt_color, 'FaceAlpha', .3, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    ylabel('\textbf{Coefficients Values}','Interpreter','latex')
+    ylabel('Coefficients Values','Interpreter','latex')
     % title('\textbf{$\delta$ }','Interpreter','latex')
     grid on
-    lgd = legend('Interpreter','latex','location','southeast');
+    % lgd = legend('Interpreter','latex','location','northeast');
     % lgd.FontSize = 18;
     set(gca, 'TickLabelInterpreter', 'Latex')
+    box on 
 
 end
 

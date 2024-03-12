@@ -261,7 +261,7 @@ end
 % lgd.FontSize = 18;
 
 figure(2)
-sct = scatter(date(N_mhe:N-N_mhe), I_data(N_mhe:N-N_mhe),40,'filled','MarkerEdgeAlpha', 0.3,'MarkerFaceAlpha', 0.3); % Set face transparency
+sct = scatter(date(N_mhe:N-N_mhe), I_data(N_mhe:N-N_mhe),100,'filled','MarkerEdgeAlpha', 0.3,'MarkerFaceAlpha', 0.3); % Set face transparency
 colorsct=[0, 0.4470, 0.7410];
 hold on 
 fill(var_area.x,var_area.Ivar/Npop, colorsct, 'FaceAlpha', .1, 'EdgeColor', 'none');
@@ -269,65 +269,70 @@ hold on
 plot(date(N_mhe:N-N_mhe),results.sts.I, 'LineWidth', 2, 'MarkerSize', 5,'Color',[0.8500 0.3250 0.0980]);
 xlim([date(1+N_mhe), date(end-N_mhe)])
 % title('\textbf{\textit{I}-Infected individuals}','Interpreter','latex')
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+yax = ylabel('Normalized Population','Interpreter','latex');
 % yax.FontSize = 14;
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
 lgd = legend('Estimated Data', '95\% confidence interval','MHE Fitted Data','Interpreter','latex','location','northeast');
 % lgd.FontSize = 18;
+box on 
 
 
 figure(3)
-scatter(date(N_mhe:N-N_mhe), D_data(N_mhe:N-N_mhe), 40,'filled')
+scatter(date(N_mhe:N-N_mhe), D_data(N_mhe:N-N_mhe),100,'filled','MarkerEdgeAlpha', 0.8,'MarkerFaceAlpha', 0.8)
 hold on
 plot(date(N_mhe:N-N_mhe),results.sts.D, LineWidth=2)
 xlim([date(1+N_mhe), date(end-N_mhe)])
 %title('\textbf{D}','Interpreter','latex')
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+yax = ylabel('Normalized Population','Interpreter','latex');
 % yax.FontSize = 14;
 lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','northeast');
 % lgd.FontSize = 18;
+box on 
 
 figure(4)
-scatter(date(N_mhe:N-N_mhe), T_data(N_mhe:N-N_mhe), 40,'filled')
+scatter(date(N_mhe:N-N_mhe), T_data(N_mhe:N-N_mhe),100,'filled','MarkerEdgeAlpha', 0.8,'MarkerFaceAlpha', 0.8)
 hold on 
 plot(date(N_mhe:N-N_mhe),results.sts.T, LineWidth=2)
 xlim([date(1+N_mhe), date(end-N_mhe)])
 %title('\textbf{T}','Interpreter','latex')
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+yax = ylabel('Normalized Population','Interpreter','latex');
 % yax.FontSize = 14;
 lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','northeast');
 % lgd.FontSize = 18;
+box on 
 
 figure(5)
-scatter(date(N_mhe:N-N_mhe), H_data(N_mhe:N-N_mhe), 40,'filled')
+scatter(date(N_mhe:N-N_mhe), H_data(N_mhe:N-N_mhe),100,'filled','MarkerEdgeAlpha', 0.8,'MarkerFaceAlpha', 0.8)
 hold on
 plot(date(N_mhe:N-N_mhe),results.sts.H, LineWidth=2)
 xlim([date(1+N_mhe), date(end-N_mhe)])
 % title('\textbf{H}','Interpreter','latex')
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+yax = ylabel('Normalized Population','Interpreter','latex');
 % yax.FontSize = 14;
 lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','northeast');
 % lgd.FontSize = 18;
+box on 
 
 figure(12)
-scatter(date(N_mhe:N-N_mhe), E_data(N_mhe:N-N_mhe), 40,'filled')
+scatter(date(N_mhe:N-N_mhe), E_data(N_mhe:N-N_mhe),100,'filled','MarkerEdgeAlpha', 0.8,'MarkerFaceAlpha', 0.8)
 hold on
 plot(date(N_mhe:N-N_mhe),results.sts.E, LineWidth=2)
 xlim([date(1+N_mhe), date(end-N_mhe)])
 % title('\textbf{H}','Interpreter','latex')
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Normalized Population}','Interpreter','latex');
+yax = ylabel('Normalized Population','Interpreter','latex');
 % yax.FontSize = 14;
 lgd = legend('Real Data', 'MHE Fitted Data','Interpreter','latex','location','southeast');
 % lgd.FontSize = 18;
+box on 
 
 
 % Figure of the alpha trend related to policy In italy
@@ -345,7 +350,7 @@ for ii = 1:length(policy_dates)-1
     hold on 
 end
 plot(date(N_mhe:N-N_mhe), results.par.alpha,'k','LineWidth',2, 'DisplayName', '$\alpha$','HandleVisibility', 'off')
-yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+yax = ylabel('Coefficient Value','Interpreter','latex');
 % yax.FontSize = 14;
 % title('\textbf{$\alpha$ coefficient}','Interpreter','latex')
 grid on
@@ -355,6 +360,7 @@ title(lgd, '\textbf{Policy Level}');
 xlim([date(1+N_mhe), date(end-N_mhe)])
 ylim([0, max(results.par.alpha)*1.5])
 set(gca, 'TickLabelInterpreter', 'Latex')
+box on 
 
 
 figure(6)
@@ -364,8 +370,9 @@ xlim([date(1+N_mhe), date(end-N_mhe)])
 ylim([0,max(results.par.gamma)*1.5])
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+yax = ylabel('Coefficient Value','Interpreter','latex');
 % yax.FontSize = 14;
+box on 
 
 
 figure(7)
@@ -375,8 +382,9 @@ ylim([0,max(results.par.delta)*1.2])
 % title('\textbf{$\delta$}','Interpreter','latex')
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+yax = ylabel('Coefficient Value','Interpreter','latex');
 % yax.FontSize = 14;
+box on 
 
 figure(8)
 plot(date(N_mhe:N-N_mhe),results.par.sigma, 'LineWidth', 2, 'Color','k')
@@ -385,8 +393,9 @@ ylim([0,max(results.par.sigma)*1.5])
 % title('\textbf{$\sigma$}','Interpreter','latex')
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+yax = ylabel('Coefficient Value','Interpreter','latex');
 % yax.FontSize = 14;
+box on 
 
 figure(9)
 plot(date(N_mhe:N-N_mhe),results.par.tau, 'LineWidth', 2, 'Color','k')
@@ -395,8 +404,9 @@ ylim([0,max(results.par.tau)*1.2])
 % title('\textbf{$\tau$}','Interpreter','latex') 
 grid on
 set(gca, 'TickLabelInterpreter', 'Latex')
-yax = ylabel('\textbf{Coefficient Value}','Interpreter','latex');
+yax = ylabel('Coefficient Value','Interpreter','latex');
 % yax.FontSize = 14;
+box on 
 
 %% MAPE error on the fitting
 
